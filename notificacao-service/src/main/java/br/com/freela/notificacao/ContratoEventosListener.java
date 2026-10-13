@@ -1,5 +1,6 @@
 package br.com.freela.notificacao;
 
+import io.micrometer.tracing.Tracer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +17,13 @@ public class ContratoEventosListener {
     private final NotificacaoService service;
     private final JsonMapper jsonMapper;
     private final SimuladorFalha simuladorFalha;
+    private final Tracer tracer;
 
-    public ContratoEventosListener(NotificacaoService service, JsonMapper jsonMapper, SimuladorFalha simuladorFalha) {
+    public ContratoEventosListener(NotificacaoService service, JsonMapper jsonMapper, SimuladorFalha simuladorFalha, Tracer tracer) {
         this.service = service;
         this.jsonMapper = jsonMapper;
         this.simuladorFalha = simuladorFalha;
+        this.tracer = tracer;
     }
 
     @KafkaListener(topics = "${freela.kafka.topico-contrato-eventos}")
@@ -49,6 +52,13 @@ public class ContratoEventosListener {
         MDC.put("eventType", evento.eventType());
         MDC.put("contratoId", String.valueOf(evento.contratoId()));
         if (evento.correlationId() != null) MDC.put("correlationId", evento.correlationId());
+        var span = tracer.currentSpan();
+        if (span != null) {
+            span.tag("eventId", String.valueOf(evento.eventId()));
+            span.tag("eventType", evento.eventType());
+            span.tag("contratoId", String.valueOf(evento.contratoId()));
+            span.tag("correlationId", String.valueOf(evento.correlationId()));
+        }
         log.info("kafka.mensagem.recebida topic={} partition={} offset={} key={} eventId={} eventType={} contratoId={} correlationId={}",
                 record.topic(), record.partition(), record.offset(), record.key(),
                 evento.eventId(), evento.eventType(), evento.contratoId(), evento.correlationId());

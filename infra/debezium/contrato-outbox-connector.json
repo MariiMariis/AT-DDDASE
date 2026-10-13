@@ -23,6 +23,6 @@
   "transforms.outbox.table.field.event.payload": "payload",
   "transforms.outbox.route.by.field": "aggregatetype",
   "transforms.outbox.route.topic.replacement": "contrato.eventos",
-  "transforms.outbox.table.fields.additional.placement": "type:header:eventType,aggregateid:header:contratoId,correlation_id:header:correlationId",
+  "transforms.outbox.table.fields.additional.placement": "type:header:eventType,aggregateid:header:contratoId,correlation_id:header:correlationId,traceparent:header:traceparent",
   "transforms.outbox.table.op.invalid.behavior": "warn"
 }

@@ -16,6 +16,8 @@ spring:
         format_sql: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    template:
+      observation-enabled: true
 freela:
   logging:
     logstash-destino: ${LOGSTASH_DESTINO:localhost:5000}
@@ -23,6 +25,12 @@ freela:
     topico-contrato-eventos: contrato.eventos
     particoes-contrato-eventos: 3
 management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
   endpoints:
     web:
       exposure:

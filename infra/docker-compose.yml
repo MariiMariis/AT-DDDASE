@@ -180,6 +180,16 @@ services:
     restart: "no"
     networks: [freela-net]
 
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: freela-zipkin
+    environment:
+      STORAGE_TYPE: mem
+      JAVA_OPTS: -Xms256m -Xmx256m
+    ports:
+      - "9411:9411"
+    networks: [freela-net]
+
 volumes:
   postgres_data:
   elasticsearch_data:

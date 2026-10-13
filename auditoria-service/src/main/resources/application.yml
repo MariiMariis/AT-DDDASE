@@ -26,7 +26,10 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
+    template:
+      observation-enabled: true
     listener:
+      observation-enabled: true
       concurrency: ${KAFKA_LISTENER_CONCURRENCY:3}
       ack-mode: record
 freela:
@@ -44,6 +47,12 @@ freela:
   simulacao:
     falha-titulo: ${SIMULAR_FALHA_TITULO:}
 management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+    export:
+      zipkin:
+        endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
   endpoints:
     web:
       exposure:
