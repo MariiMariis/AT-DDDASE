@@ -78,28 +78,115 @@ Todas as mensagens seguem o mesmo envelope JSON. A **chave** é o `contratoId`.
 
 \* Sempre presente em operações iniciadas pelo Gateway.
 
-Além do valor, a mensagem leva os headers `eventType`, `contratoId`, `correlationId` e `traceparent` (contexto de rastreamento no padrão W3C). Exemplo de um `ContratoConcluido`:
+Além do valor, a mensagem leva os headers `eventType`, `contratoId`, `correlationId` e `traceparent` (contexto de rastreamento no padrão W3C). Os consumidores ignoram campos desconhecidos (*tolerant reader*), o que permite evoluir o formato sem quebrar a compatibilidade, e rejeitam mensagens sem os campos obrigatórios.
+
+### 3.4 Especificação por mensagem
+
+| Mensagem | Tópico | Produtor | Consumidores | Chave | `payload.status` |
+|---|---|---|---|---|---|
+| `ContratoCriado` | `contrato.eventos` | `contrato-service` | notificação, reputação, auditoria | `contratoId` | `ATIVO` |
+| `EntregaRegistrada` | `contrato.eventos` | `contrato-service` | notificação, reputação, auditoria | `contratoId` | `ENTREGA_REGISTRADA` |
+| `ContratoConcluido` | `contrato.eventos` | `contrato-service` | notificação, reputação, auditoria | `contratoId` | `CONCLUIDO` |
+| `ContratoCancelado` | `contrato.eventos` | `contrato-service` | notificação, reputação, auditoria | `contratoId` | `CANCELADO` |
+
+As quatro mensagens compartilham o envelope e os campos obrigatórios da seção 3.3. Os exemplos abaixo foram extraídos da tabela de Outbox durante a execução (clique para expandir):
+
+<details>
+<summary><code>ContratoCriado</code></summary>
+
+```json
+{
+  "eventId": "5a68e2e0-db08-4e4d-bdd4-94d77c567536",
+  "eventType": "ContratoCriado",
+  "eventVersion": 1,
+  "occurredAt": "2026-10-13T02:52:31.616954200Z",
+  "contratoId": "7f2bcb0a-91ba-4cbb-aef2-25a21753eeb8",
+  "correlationId": "evid-20261012235231-criar",
+  "source": "contrato-service",
+  "payload": {
+    "clienteId": "11111111-1111-1111-1111-111111111111",
+    "freelancerId": "eeeeeeee-eeee-eeee-eeee-000000235231",
+    "titulo": "Evidencia 20261012235231",
+    "valor": 3500.00,
+    "status": "ATIVO"
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><code>EntregaRegistrada</code></summary>
+
+```json
+{
+  "eventId": "4f4611ea-b38d-4b1d-bd1a-0d5f878c69dd",
+  "eventType": "EntregaRegistrada",
+  "eventVersion": 1,
+  "occurredAt": "2026-10-13T02:52:32.233936600Z",
+  "contratoId": "7f2bcb0a-91ba-4cbb-aef2-25a21753eeb8",
+  "correlationId": "evid-20261012235231-entrega",
+  "source": "contrato-service",
+  "payload": {
+    "clienteId": "11111111-1111-1111-1111-111111111111",
+    "freelancerId": "eeeeeeee-eeee-eeee-eeee-000000235231",
+    "titulo": "Evidencia 20261012235231",
+    "valor": 3500.00,
+    "status": "ENTREGA_REGISTRADA"
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><code>ContratoConcluido</code></summary>
 
 ```json
 {
   "eventId": "4aa45960-bb9e-4eab-a337-5055f03b7b00",
   "eventType": "ContratoConcluido",
   "eventVersion": 1,
-  "occurredAt": "2026-10-13T02:52:31.901Z",
+  "occurredAt": "2026-10-13T02:52:32.487050100Z",
   "contratoId": "7f2bcb0a-91ba-4cbb-aef2-25a21753eeb8",
   "correlationId": "evid-20261012235231-conclusao",
   "source": "contrato-service",
   "payload": {
     "clienteId": "11111111-1111-1111-1111-111111111111",
     "freelancerId": "eeeeeeee-eeee-eeee-eeee-000000235231",
-    "titulo": "Construção de API de pagamentos",
+    "titulo": "Evidencia 20261012235231",
     "valor": 3500.00,
     "status": "CONCLUIDO"
   }
 }
 ```
 
-Os quatro eventos têm a mesma estrutura; muda apenas o `eventType` e o `payload.status` (`ATIVO`, `ENTREGA_REGISTRADA`, `CONCLUIDO` ou `CANCELADO`). Os consumidores ignoram campos desconhecidos (*tolerant reader*), o que permite evoluir o formato sem quebrar a compatibilidade, e rejeitam mensagens sem os campos obrigatórios.
+</details>
+
+<details>
+<summary><code>ContratoCancelado</code></summary>
+
+```json
+{
+  "eventId": "35edfa7a-2cb0-47f0-ba54-10aec494837f",
+  "eventType": "ContratoCancelado",
+  "eventVersion": 1,
+  "occurredAt": "2026-10-13T00:20:55.459164900Z",
+  "contratoId": "62ca7ee0-a01f-49cb-8759-7b0b016cff0e",
+  "correlationId": "ex2-cancel-B",
+  "source": "contrato-service",
+  "payload": {
+    "clienteId": "11111111-1111-1111-1111-111111111111",
+    "freelancerId": "33333333-3333-3333-3333-333333333333",
+    "titulo": "Site",
+    "valor": 900.00,
+    "status": "CANCELADO"
+  }
+}
+```
+
+</details>
+
 
 ## 4. Padrões de confiabilidade
 
@@ -187,14 +274,41 @@ O **API Gateway** recebe o header `X-Correlation-Id` (ou gera um UUID, se ausent
 
 ### 6.1 Infraestrutura
 
-Requisitos: Docker (com cerca de 6 GB de memória disponível) e JDK 21 ou superior.
+Requisitos: Docker (com cerca de 6 GB de memória disponível) e JDK 21 ou superior. Todos os componentes estão definidos em `infra/docker-compose.yml`:
+
+| Componente | Porta | Função |
+|---|---:|---|
+| PostgreSQL 16 | 5432 | Bancos `contrato_db`, `notificacao_db`, `reputacao_db` e `auditoria_db` (usuário e senha `freela`) |
+| Apache Kafka 4 (KRaft) | 9092 | Broker de mensagens, sem ZooKeeper |
+| Debezium (Kafka Connect) | 8095 | Publicação dos eventos da tabela de Outbox |
+| Kafka UI | 8090 | Visualização de tópicos, mensagens e consumidores |
+| Elasticsearch, Logstash e Kibana | 9200, 5000, 5601 | Centralização e consulta de logs |
+| Zipkin | 9411 | Rastreamento distribuído |
+
+**Passo 1. Subir o ambiente** a partir da pasta `infra`:
 
 ```bash
 cd infra
 docker compose up -d
 ```
 
-O `docker-compose.yml` sobe o PostgreSQL (bancos separados por serviço), o Kafka em modo **KRaft**, o Debezium, o Kafka UI, o ELK e o Zipkin. Containers auxiliares criam os tópicos, registram o conector do Debezium e configuram o Kibana; eles terminam com `Exited (0)` após a inicialização. Para verificar o estado: `docker compose ps -a`. Para encerrar: `docker compose down` (com `-v` para apagar os dados).
+**Passo 2. Aguardar a inicialização** (1 a 3 minutos na primeira vez). Os serviços principais devem aparecer como `healthy`. Os containers auxiliares `kafka-init`, `connect-init` e `kibana-init`, que criam os tópicos, registram o conector do Debezium e configuram o Kibana, devem terminar com `Exited (0)`:
+
+```bash
+docker compose ps -a
+```
+
+**Passo 3. Confirmar que o conector do Debezium está em execução** (o estado esperado é `RUNNING`):
+
+```bash
+curl http://localhost:8095/connectors/contrato-outbox-connector/status
+```
+
+**Passo 4. Subir as aplicações** (seção 6.2), começando pelo Eureka.
+
+**Passo 5. Verificar** se os cinco serviços aparecem registrados no Eureka (http://localhost:8761) antes de enviar requisições ao Gateway.
+
+Para encerrar o ambiente, use `docker compose down`; com `docker compose down -v`, os dados do PostgreSQL e do Elasticsearch também são apagados.
 
 | Interface | Endereço |
 |---|---|
@@ -332,6 +446,19 @@ cfd0e763  ContratoCriado(P2@37) EntregaRegistrada(P2@41) ContratoConcluido(P2@43
 02:52:32.111  auditoria-service    auditoria.registro.sucesso
 ```
 
+A filtragem por `contratoId=7f2bcb0a-91ba-4cbb-aef2-25a21753eeb8` reúne o ciclo de vida completo do contrato: 79 logs de quatro serviços, agrupados pelas três operações que o compuseram:
+
+```text
+correlationId                    logs   serviços
+evid-20261012235231-criar          20   contrato, notificacao, reputacao, auditoria
+evid-20261012235231-entrega        19   contrato, notificacao, reputacao, auditoria
+evid-20261012235231-conclusao      40   contrato, notificacao, reputacao, auditoria (inclui o reenvio duplicado)
+```
+
+Consulta no Kibana filtrada por `correlationId`, com as colunas `service`, `correlationId`, `contratoId` e `eventId`:
+
+![Logs da operação no Kibana](docs/img/kibana-correlation-id.png)
+
 **9. Trace correspondente no Zipkin.** A mesma operação gerou um trace com a participação dos cinco serviços (`traceId 6acd9cef36d1c9842acbd09d04c6d8a9`). O mesmo `traceId` aparece nos 25 logs do item anterior:
 
 ```text
@@ -343,6 +470,10 @@ cfd0e763  ContratoCriado(P2@37) EntregaRegistrada(P2@41) ContratoConcluido(P2@43
 [reputacao-service]    CONSUMER contrato.eventos process
 [auditoria-service]    CONSUMER contrato.eventos process
 ```
+
+Trace completo no painel do Zipkin, mostrando a participação de todos os serviços, inclusive o trecho assíncrono pelo Kafka:
+
+![Trace no Zipkin](docs/img/zipkin-trace.png)
 
 **10. Mensagem com erro preservada para diagnóstico.** Uma mensagem malformada foi enviada para a DLT sem retentativas, com a origem e o motivo registrados:
 
