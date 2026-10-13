@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:16
     container_name: freela-postgres
+    command: ["postgres", "-c", "wal_level=logical", "-c", "max_replication_slots=4", "-c", "max_wal_senders=4"]
     environment:
       POSTGRES_USER: freela
       POSTGRES_PASSWORD: freela
@@ -45,6 +46,59 @@ services:
       retries: 15
     networks: [freela-net]
 
+  kafka-init:
+    image: apache/kafka:4.2.1
+    container_name: freela-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./kafka/create-topics.sh:/create-topics.sh:ro
+    entrypoint: ["/bin/sh", "/create-topics.sh"]
+    restart: "no"
+    networks: [freela-net]
+
+  connect:
+    image: quay.io/debezium/connect:3.4
+    container_name: freela-connect
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    ports:
+      - "8095:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:19092
+      GROUP_ID: freela-connect
+      CONFIG_STORAGE_TOPIC: _connect_configs
+      OFFSET_STORAGE_TOPIC: _connect_offsets
+      STATUS_STORAGE_TOPIC: _connect_statuses
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/connectors >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [freela-net]
+
+  connect-init:
+    image: curlimages/curl:8.11.1
+    container_name: freela-connect-init
+    depends_on:
+      connect:
+        condition: service_healthy
+    volumes:
+      - ./debezium/contrato-outbox-connector.json:/connector.json:ro
+    command: ["-sf", "-X", "PUT", "-H", "Content-Type: application/json", "--data", "@/connector.json",
+              "http://connect:8083/connectors/contrato-outbox-connector/config"]
+    restart: "no"
+    networks: [freela-net]
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: freela-kafka-ui
@@ -56,6 +110,8 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: freela-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: debezium
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://connect:8083
     networks: [freela-net]
 
 volumes:

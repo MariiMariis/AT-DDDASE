@@ -49,12 +49,17 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                    <executions>
+                        <execution>
+                            <goals><goal>repackage</goal></goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.14.1</version>
-                    <configuration><release>${java.version}</release></configuration>
+                    <configuration><release>${java.version}</release><parameters>true</parameters></configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

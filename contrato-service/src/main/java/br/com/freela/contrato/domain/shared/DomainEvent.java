@@ -5,4 +5,5 @@ public interface DomainEvent {
     UUID eventId();
     Instant occurredAt();
     String eventType();
+    UUID aggregateId();
 }

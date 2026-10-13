@@ -26,6 +26,10 @@ public class ContratoRepositoryJpaAdapter implements ContratoRepository {
         log.info("contrato.persistence.findById contratoId={}", id);
         return jpa.findById(id).map(this::toDomain);
     }
+    @Override public Optional<Contrato> buscarParaAtualizacao(UUID id) {
+        log.info("contrato.persistence.findByIdForUpdate contratoId={}", id);
+        return jpa.findByIdForUpdate(id).map(this::toDomain);
+    }
     @Override public List<Contrato> listar() {
         log.info("contrato.persistence.findAll");
         return jpa.findAll().stream().map(this::toDomain).toList();

@@ -6,5 +6,6 @@ import java.util.UUID;
 public interface ContratoRepository {
     Contrato salvar(Contrato contrato);
     Optional<Contrato> buscarPorId(UUID id);
+    Optional<Contrato> buscarParaAtualizacao(UUID id);
     List<Contrato> listar();
 }
