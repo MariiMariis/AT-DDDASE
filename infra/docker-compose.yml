@@ -79,6 +79,9 @@ services:
       CONFIG_STORAGE_REPLICATION_FACTOR: 1
       OFFSET_STORAGE_REPLICATION_FACTOR: 1
       STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_PRODUCER_ACKS: all
+      CONNECT_PRODUCER_ENABLE_IDEMPOTENCE: "true"
+      CONNECT_PRODUCER_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION: 5
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8083/connectors >/dev/null"]
       interval: 10s

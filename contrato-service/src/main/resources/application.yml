@@ -16,6 +16,10 @@ spring:
         format_sql: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+freela:
+  kafka:
+    topico-contrato-eventos: contrato.eventos
+    particoes-contrato-eventos: 3
 management:
   endpoints:
     web:

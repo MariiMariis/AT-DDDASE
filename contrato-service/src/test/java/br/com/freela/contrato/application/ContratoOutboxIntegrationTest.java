@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.kafka.admin.auto-create=false",
         "eureka.client.enabled=false"
 })
 class ContratoOutboxIntegrationTest {
