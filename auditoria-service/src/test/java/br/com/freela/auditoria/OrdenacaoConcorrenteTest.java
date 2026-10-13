@@ -6,6 +6,8 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
@@ -42,6 +44,7 @@ class OrdenacaoConcorrenteTest {
 
     @Autowired EmbeddedKafkaBroker broker;
     @Autowired EventoAuditoriaRepository repository;
+    @Autowired KafkaListenerEndpointRegistry registry;
     @MockitoSpyBean AuditoriaService auditoriaService;
 
     record Processamento(UUID contratoId, String eventType, String thread, int particao) {}
@@ -56,6 +59,8 @@ class OrdenacaoConcorrenteTest {
                     Thread.currentThread().getName(), inv.getArgument(2)));
             return inv.callRealMethod();
         }).when(auditoriaService).registrar(any(), anyString(), anyInt(), anyLong(), anyString());
+
+        aguardarUmaParticaoPorConsumidor();
 
         List<UUID> contratos = new ArrayList<>();
         for (int i = 0; i < 12; i++) contratos.add(UUID.randomUUID());
@@ -90,5 +95,18 @@ class OrdenacaoConcorrenteTest {
 
         assertThat(processados.stream().map(Processamento::particao).distinct().count()).isGreaterThan(1);
         assertThat(processados.stream().map(Processamento::thread).distinct().count()).isGreaterThan(1);
+    }
+
+    private void aguardarUmaParticaoPorConsumidor() throws InterruptedException {
+        long limite = System.currentTimeMillis() + 30_000;
+        while (System.currentTimeMillis() < limite) {
+            boolean distribuido = registry.getListenerContainers().stream()
+                    .map(c -> (ConcurrentMessageListenerContainer<?, ?>) c)
+                    .flatMap(c -> c.getContainers().stream())
+                    .allMatch(c -> c.getAssignedPartitions() != null && c.getAssignedPartitions().size() == 1);
+            if (distribuido) return;
+            Thread.sleep(200);
+        }
+        throw new IllegalStateException("Particoes nao distribuidas entre os consumidores");
     }
 }

@@ -1,6 +1,6 @@
 package br.com.freela.notificacao;
 import jakarta.persistence.*; import java.time.Instant; import java.util.UUID;
-@Entity @Table(name="notificacoes")
+@Entity @Table(name="notificacoes", uniqueConstraints=@UniqueConstraint(name="uk_notificacao_evento_destinatario", columnNames={"eventId","destinatarioId"}))
 class Notificacao {
  @Id UUID id; UUID eventId; UUID contratoId; UUID destinatarioId; String papelDestinatario; String tipo; @Column(length=500) String mensagem; String correlationId; Instant criadaEm;
  protected Notificacao(){}

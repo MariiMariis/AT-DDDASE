@@ -2,22 +2,27 @@ package br.com.freela.notificacao;
 import org.slf4j.*; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import java.util.ArrayList; import java.util.List; import java.util.UUID;
 @Service
 public class NotificacaoService {
- private static final Logger log=LoggerFactory.getLogger(NotificacaoService.class); private final NotificacaoRepository repository;
- public NotificacaoService(NotificacaoRepository r){this.repository=r;}
+ private static final Logger log=LoggerFactory.getLogger(NotificacaoService.class); private final NotificacaoRepository repository; private final EventoProcessadoRepository processados;
+ public NotificacaoService(NotificacaoRepository r, EventoProcessadoRepository p){this.repository=r;this.processados=p;}
 
- @Transactional public int processar(EventoContrato evento){
-  var destinatarios=destinatarios(evento);
-  if(destinatarios.isEmpty()){
-   log.info("notificacao.evento.ignorado eventId={} eventType={} contratoId={} resultado=SEM_DESTINATARIO",evento.eventId(),evento.eventType(),evento.contratoId());
-   return 0;
+ @Transactional public ResultadoProcessamento processar(EventoContrato evento){
+  if(processados.existsById(evento.eventId())){
+   log.warn("notificacao.evento.duplicado eventId={} eventType={} contratoId={} resultado=DUPLICADO_IGNORADO",evento.eventId(),evento.eventType(),evento.contratoId());
+   return ResultadoProcessamento.DUPLICADO;
   }
+  var destinatarios=destinatarios(evento);
   for(var d:destinatarios){
    registrar(evento,d.id(),d.papel(),mensagem(evento,d.papel()));
   }
-  return destinatarios.size();
+  processados.saveAndFlush(new EventoProcessado(evento));
+  if(destinatarios.isEmpty()){
+   log.info("notificacao.evento.ignorado eventId={} eventType={} contratoId={} resultado=SEM_DESTINATARIO",evento.eventId(),evento.eventType(),evento.contratoId());
+   return ResultadoProcessamento.IGNORADO;
+  }
+  return ResultadoProcessamento.PROCESSADO;
  }
 
- @Transactional public void registrar(EventoContrato evento, UUID destinatarioId, String papel, String mensagem){
+ private void registrar(EventoContrato evento, UUID destinatarioId, String papel, String mensagem){
   log.info("notificacao.registro.inicio eventId={} contratoId={} destinatarioId={} papel={} tipo={}",evento.eventId(),evento.contratoId(),destinatarioId,papel,evento.eventType());
   var n=repository.save(new Notificacao(evento.eventId(),evento.contratoId(),destinatarioId,papel,evento.eventType(),mensagem,evento.correlationId()));
   log.info("notificacao.registro.sucesso notificacaoId={} eventId={} contratoId={} destinatarioId={} resultado=REGISTRADA",n.id,evento.eventId(),evento.contratoId(),destinatarioId);
