@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.kafka.listener.auto-startup=false",
+        "spring.kafka.admin.auto-create=false",
         "eureka.client.enabled=false"
 })
 class IdempotenciaAuditoriaTest {

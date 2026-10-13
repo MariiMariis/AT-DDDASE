@@ -8,5 +8,8 @@ criar() {
 }
 
 criar contrato.eventos 3
+criar contrato.eventos.notificacao.DLT 3
+criar contrato.eventos.reputacao.DLT 3
+criar contrato.eventos.auditoria.DLT 3
 
-$TOPICS --bootstrap-server $BOOTSTRAP --describe --topic contrato.eventos
+$TOPICS --bootstrap-server $BOOTSTRAP --describe --exclude-internal

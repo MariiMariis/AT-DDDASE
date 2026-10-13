@@ -22,12 +22,25 @@ spring:
         partition.assignment.strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
     listener:
       concurrency: ${KAFKA_LISTENER_CONCURRENCY:3}
       ack-mode: record
 freela:
   kafka:
     topico-contrato-eventos: contrato.eventos
+    topico-dlt: contrato.eventos.reputacao.DLT
+    particoes-dlt: 3
+    retry:
+      tentativas: ${KAFKA_RETRY_TENTATIVAS:3}
+      intervalo-inicial-ms: 1000
+      multiplicador: 2.0
+      intervalo-maximo-ms: 10000
+  simulacao:
+    falha-titulo: ${SIMULAR_FALHA_TITULO:}
 management:
   endpoints:
     web:
