@@ -1,0 +1,9 @@
+{
+  "data_view": {
+    "id": "freela-logs",
+    "title": "freela-logs-*",
+    "name": "Freela - Logs dos microsservicos",
+    "timeFieldName": "@timestamp"
+  },
+  "override": true
+}

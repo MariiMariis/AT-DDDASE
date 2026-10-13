@@ -2,6 +2,7 @@ package br.com.freela.gateway;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -23,14 +24,19 @@ public class RequestLoggingFilter implements GlobalFilter, Ordered {
         long inicio = System.currentTimeMillis();
 
         var request = exchange.getRequest().mutate().header("X-Correlation-Id", correlationId).build();
-        log.info("gateway.request.inicio correlationId={} method={} path={}", correlationId,
-                request.getMethod(), request.getURI().getPath());
+        try (var ignorado = MDC.putCloseable("correlationId", correlationId)) {
+            log.info("gateway.request.inicio correlationId={} method={} path={}", correlationId,
+                    request.getMethod(), request.getURI().getPath());
+        }
 
         return chain.filter(exchange.mutate().request(request).build())
-                .doFinally(signal -> log.info(
-                        "gateway.request.fim correlationId={} method={} path={} status={} durationMs={} signal={}",
-                        finalCorrelationId, request.getMethod(), request.getURI().getPath(),
-                        exchange.getResponse().getStatusCode(), System.currentTimeMillis() - inicio, signal));
+                .doFinally(signal -> {
+                    try (var ignorado = MDC.putCloseable("correlationId", finalCorrelationId)) {
+                        log.info("gateway.request.fim correlationId={} method={} path={} status={} durationMs={} signal={}",
+                                finalCorrelationId, request.getMethod(), request.getURI().getPath(),
+                                exchange.getResponse().getStatusCode(), System.currentTimeMillis() - inicio, signal);
+                    }
+                });
     }
 
     @Override public int getOrder() { return -100; }

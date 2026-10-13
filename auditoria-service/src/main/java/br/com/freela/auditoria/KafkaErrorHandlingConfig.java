@@ -4,6 +4,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,19 +45,29 @@ public class KafkaErrorHandlingConfig {
 
         var handler = new DefaultErrorHandler((record, ex) -> {
             var causa = causa(ex);
-            log.error("kafka.mensagem.dlt topic={} partition={} offset={} key={} topicoDlt={} excecao={} motivo={}",
+            comContexto(record.key(), () -> log.error("kafka.mensagem.dlt topic={} partition={} offset={} key={} topicoDlt={} excecao={} motivo={}",
                     record.topic(), record.partition(), record.offset(), record.key(), topicoDlt,
-                    causa.getClass().getSimpleName(), causa.getMessage());
+                    causa.getClass().getSimpleName(), causa.getMessage()));
             recoverer.accept(record, causa instanceof Exception e ? e : ex);
         }, backOff);
         handler.addNotRetryableExceptions(EventoInvalidoException.class);
         handler.setRetryListeners((record, ex, tentativa) -> {
             var causa = causa(ex);
-            log.warn("kafka.mensagem.retentativa topic={} partition={} offset={} key={} tentativa={} excecao={} motivo={}",
+            comContexto(record.key(), () -> log.warn("kafka.mensagem.retentativa topic={} partition={} offset={} key={} tentativa={} excecao={} motivo={}",
                     record.topic(), record.partition(), record.offset(), record.key(), tentativa,
-                    causa.getClass().getSimpleName(), causa.getMessage());
+                    causa.getClass().getSimpleName(), causa.getMessage()));
         });
         return handler;
+    }
+
+    private static void comContexto(Object contratoId, Runnable acao) {
+        if (contratoId == null) {
+            acao.run();
+            return;
+        }
+        try (var ignorado = MDC.putCloseable("contratoId", contratoId.toString())) {
+            acao.run();
+        }
     }
 
     private static Throwable causa(Exception ex) {

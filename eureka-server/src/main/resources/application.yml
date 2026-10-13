@@ -18,8 +18,10 @@ eureka:
   server:
     enable-self-preservation: false
 logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level service=${spring.application.name} thread=%thread logger=%logger{36} - %msg%n"
   level:
     root: INFO
+    org.apache.kafka: WARN
     com.netflix.eureka: INFO
+freela:
+  logging:
+    logstash-destino: ${LOGSTASH_DESTINO:localhost:5000}

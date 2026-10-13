@@ -30,8 +30,8 @@ public class ReputacaoService {
   var r=repository.findById(freelancerId).orElseGet(()->new ReputacaoFreelancer(freelancerId));
   alteracao.accept(r);
   repository.save(r);
-  log.info("reputacao.atualizacao.sucesso eventId={} contratoId={} freelancerId={} contratosIniciados={} contratosConcluidos={} contratosCancelados={} valorTotal={}",
-   evento.eventId(),evento.contratoId(),freelancerId,r.contratosIniciados,r.contratosConcluidos,r.contratosCancelados,r.valorTotal);
+  log.info("reputacao.atualizacao.sucesso eventId={} contratoId={} freelancerId={} contratosIniciados={} contratosConcluidos={} contratosCancelados={}",
+   evento.eventId(),evento.contratoId(),freelancerId,r.contratosIniciados,r.contratosConcluidos,r.contratosCancelados);
   return ResultadoProcessamento.PROCESSADO;
  }
 }

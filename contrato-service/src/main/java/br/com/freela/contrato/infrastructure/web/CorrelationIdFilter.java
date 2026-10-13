@@ -18,6 +18,7 @@ import java.util.UUID;
 public class CorrelationIdFilter extends OncePerRequestFilter {
     public static final String HEADER = "X-Correlation-Id";
     public static final String MDC_KEY = "correlationId";
+    public static final String MDC_CONTRATO_ID = "contratoId";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -30,6 +31,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
         } finally {
             MDC.remove(MDC_KEY);
+            MDC.remove(MDC_CONTRATO_ID);
         }
     }
 }

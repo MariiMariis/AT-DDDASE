@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="SERVICE" source="spring.application.name" defaultValue="desconhecido"/>
+    <springProperty scope="context" name="LOGSTASH_DESTINO" source="freela.logging.logstash-destino" defaultValue="localhost:5000"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level service=${SERVICE} traceId=%X{traceId:-} spanId=%X{spanId:-} correlationId=%X{correlationId:-} contratoId=%X{contratoId:-} eventId=%X{eventId:-} thread=%thread logger=%logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${LOGSTASH_DESTINO}</destination>
+        <reconnectionDelay>5 seconds</reconnectionDelay>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeContext>false</includeContext>
+            <customFields>{"service":"${SERVICE}"}</customFields>
+            <fieldNames>
+                <levelValue>[ignore]</levelValue>
+            </fieldNames>
+            <decorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+                <defaultMask>****</defaultMask>
+                <path>senha</path>
+                <path>password</path>
+                <path>token</path>
+                <path>authorization</path>
+                <path>cpf</path>
+                <path>email</path>
+                <value>[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}</value>
+                <value>\d{3}\.\d{3}\.\d{3}-\d{2}</value>
+                <value>(?i)bearer\s+[A-Za-z0-9._~+/=-]+</value>
+            </decorator>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="LOGSTASH"/>
+    </root>
+</configuration>

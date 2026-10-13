@@ -3,6 +3,7 @@ package br.com.freela.notificacao;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,26 @@ public class ContratoEventosListener {
     }
 
     public void processar(ConsumerRecord<String, String> record) {
+        var contextoAnterior = MDC.getCopyOfContextMap();
+        try {
+            if (record.key() != null) MDC.put("contratoId", record.key());
+            processarComContexto(record);
+        } catch (RuntimeException e) {
+            log.error("kafka.mensagem.falha topic={} partition={} offset={} key={} excecao={} motivo={}",
+                    record.topic(), record.partition(), record.offset(), record.key(),
+                    e.getClass().getSimpleName(), e.getMessage());
+            throw e;
+        } finally {
+            if (contextoAnterior == null) MDC.clear(); else MDC.setContextMap(contextoAnterior);
+        }
+    }
+
+    private void processarComContexto(ConsumerRecord<String, String> record) {
         var evento = ler(record);
+        MDC.put("eventId", String.valueOf(evento.eventId()));
+        MDC.put("eventType", evento.eventType());
+        MDC.put("contratoId", String.valueOf(evento.contratoId()));
+        if (evento.correlationId() != null) MDC.put("correlationId", evento.correlationId());
         log.info("kafka.mensagem.recebida topic={} partition={} offset={} key={} eventId={} eventType={} contratoId={} correlationId={}",
                 record.topic(), record.partition(), record.offset(), record.key(),
                 evento.eventId(), evento.eventType(), evento.contratoId(), evento.correlationId());

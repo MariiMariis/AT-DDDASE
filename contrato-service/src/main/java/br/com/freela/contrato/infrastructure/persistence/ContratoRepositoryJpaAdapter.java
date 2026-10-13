@@ -4,6 +4,7 @@ import br.com.freela.contrato.domain.model.Contrato;
 import br.com.freela.contrato.domain.repository.ContratoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,7 @@ public class ContratoRepositoryJpaAdapter implements ContratoRepository {
     public ContratoRepositoryJpaAdapter(SpringDataContratoRepository jpa) { this.jpa = jpa; }
 
     @Override public Contrato salvar(Contrato c) {
+        MDC.put("contratoId", c.id().toString());
         log.info("contrato.persistence.save.inicio contratoId={} status={}", c.id(), c.status());
         var entity = new ContratoJpaEntity(c.id(), c.clienteId(), c.freelancerId(), c.titulo(), c.valor(), c.status(), c.criadoEm());
         var saved = jpa.save(entity);

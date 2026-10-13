@@ -17,6 +17,8 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 freela:
+  logging:
+    logstash-destino: ${LOGSTASH_DESTINO:localhost:5000}
   kafka:
     topico-contrato-eventos: contrato.eventos
     particoes-contrato-eventos: 3
@@ -33,9 +35,8 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
 logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level service=${spring.application.name} thread=%thread logger=%logger{36} - %msg%n"
   level:
     root: INFO
+    org.apache.kafka: WARN
     br.com.freela: INFO
     org.hibernate.SQL: INFO
